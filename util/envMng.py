@@ -1,4 +1,5 @@
 from pathlib import Path
+from util import *
 import os
 
 class envLoader():
@@ -6,6 +7,7 @@ class envLoader():
         self.Path = Path(".")
 
     def parseFiles(self):
+
         for file in self.Path.glob("*.env"):
             with open(file, "r") as f:
                 for line in f:
