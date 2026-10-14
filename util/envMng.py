@@ -1,5 +1,5 @@
 from pathlib import Path
-from util import *
+from util.logger import logger
 import os
 
 class envLoader():

@@ -33,3 +33,10 @@ class Logger():
     def CRITICAL(self, message):
         if self.log_level <= 4:
             print(f"[CRITICAL] {message}")
+
+
+logger = Logger()
+
+
+def configure_logger(log_level):
+    logger.log_level = log_level
