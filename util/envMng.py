@@ -8,11 +8,11 @@ class envLoader():
 
     def parseFiles(self):
 
-        for file in self.Path.glob("*.env"):
+        for file in self.Path.glob("*.env*"):
+            logger.DEBUG(f"Parsing env file: {file}")
             with open(file, "r") as f:
                 for line in f:
                     if line.strip() and not line.startswith("#"):
                         key, value = line.strip().split("=", 1)
                         os.environ[key] = value
-
-    
+                        logger.DEBUG(f"Set environment variable: {key}={value}")
