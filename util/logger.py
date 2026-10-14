@@ -6,6 +6,7 @@ Log levels are the following:
     2: WARNING
     3: ERROR
     4: CRITICAL
+    >=5: None
 """
 
 
