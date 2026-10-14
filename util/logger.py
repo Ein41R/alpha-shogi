@@ -32,7 +32,7 @@ class Logger():
 
     def CRITICAL(self, message):
         if self.log_level <= 4:
-            print(f"[CRITICAL] {message}")
+            print(f"\033[0;31m[CRITICAL] {message}\033[0m")
 
 
 logger = Logger()

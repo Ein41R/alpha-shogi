@@ -16,3 +16,4 @@ class envLoader():
                         key, value = line.strip().split("=", 1)
                         os.environ[key] = value
                         logger.DEBUG(f"Set environment variable: {key}={value}")
+                        logger.CRITICAL(f"Set environment variable: {key}={value}")
