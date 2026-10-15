@@ -16,23 +16,23 @@ class Logger():
 
     def DEBUG(self, message):
         if self.log_level <= 0:
-            print(f"[DEBUG] {message}")
+            print(f"[\x1b[1;38;5;27mDEBUG\033[0m] {message}")
 
     def INFO(self, message):
         if self.log_level <= 1:
-            print(f"[INFO] {message}")
+            print(f"[\x1b[1;38;5;47mINFO\033[0m] {message}")
 
     def WARNING(self, message):
         if self.log_level <= 2:
-            print(f"[WARNING] {message}")
+            print(f"[\x1b[1;38;5;226mWARNING\033[0m] {message}")
 
     def ERROR(self, message):
         if self.log_level <= 3:
-            print(f"[ERROR] {message}")
+            print(f"[\x1b[1;38;5;215mERROR\033[0m] {message}")
 
     def CRITICAL(self, message):
         if self.log_level <= 4:
-            print(f"\033[0;31m[CRITICAL] {message}\033[0m")
+            print(f"[\x1b[1;38;5;203mCRITICAL\033[0m] {message}")
 
 
 logger = Logger()
@@ -40,3 +40,12 @@ logger = Logger()
 
 def configure_logger(log_level):
     logger.log_level = log_level
+
+if __name__ == "__main__":
+    #testing dummy data
+    configure_logger(0)
+    logger.DEBUG("This is a debug message.")
+    logger.INFO("This is an info message.")
+    logger.WARNING("This is a warning message.")
+    logger.ERROR("This is an error message.")
+    logger.CRITICAL("This is a critical message.")

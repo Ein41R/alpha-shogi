@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from util.envMng import envLoader
 from util.logger import configure_logger
+from util.logger import logger
 
 def main():
     configure_logger(0)
