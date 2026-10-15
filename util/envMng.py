@@ -14,5 +14,6 @@ class envLoader():
                 for line in f:
                     if line.strip() and not line.startswith("#"):
                         key, value = line.strip().split("=", 1)
+                        value = value.strip('"').strip("'")  # Remove quotes if present
                         os.environ[key] = value
                         logger.DEBUG(f"Set environment variable: {key}={value}")
