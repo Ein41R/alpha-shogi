@@ -45,6 +45,8 @@ def render_board(board, color=None):
             + paint("│".join(cells), "", color)
             + paint("│", BOARD_LINE, color)
         )
+        if rank < 8:
+            rows.append(paint("  ├" + "────┼" * 8 + "────┤", BOARD_LINE, color))
 
     rows.append(paint("  └" + "────┴" * 8 + "────┘", BOARD_LINE, color))
     return "\n".join(rows)
