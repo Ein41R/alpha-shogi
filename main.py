@@ -15,7 +15,11 @@ def main():
     for bin in Path(os.environ.get("DATA_PATH")).glob("*.bin*"):
         parsefile = parser.parseFile(bin)
         logger.INFO(f"Parsed {len(parsefile)} entries from {bin}")
-        print(parsefile)
+        for entry in parsefile:
+            sfen = parser.decodeSfen(entry["sfen"])
+            move = parser.decodeMove(entry["sfen"], entry["move"])
+            logger.DEBUG(f"SFEN: {sfen}, Move: {move}, Score: {entry['score']}, Ply: {entry['gamePly']}, Result: {entry['gameResult']}")
+            return
 
 
 if __name__ == "__main__":

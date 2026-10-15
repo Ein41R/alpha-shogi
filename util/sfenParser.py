@@ -4,6 +4,7 @@ Python script for parsing data in YaneuraOu PackedSfenValue format.
 """
 
 import numpy as np
+import cshogi
 
 PackedSfenValue_dtype = np.dtype(
     [
@@ -32,5 +33,16 @@ class Parser():
             data = np.fromfile(file, dtype=PackedSfenValue_dtype)
             data_list.append(data)
         return np.concatenate(data_list)
+
+    def decodeSfen(self, packed_sfen):
+        board = cshogi.Board()
+        board.set_psfen(np.asarray(packed_sfen, dtype=np.uint8))
+        return board.sfen()
+
+    def decodeMove(self, packed_sfen, packed_move):
+        board = cshogi.Board()
+        board.set_psfen(np.asarray(packed_sfen, dtype=np.uint8))
+        move = board.move_from_psv(int(packed_move))
+        return cshogi.move_to_usi(move)
 
     
