@@ -6,6 +6,7 @@ from util.envMng import envLoader
 from util.logger import configure_logger
 from util.logger import logger
 from util.sfenParser import Parser
+from util.visualize_positions import render_board, render_hands
 
 from config.miscConfig import LOG_LEVEL
 
@@ -32,9 +33,11 @@ def main():
             # result = entry["gameResult"]
             board.set_psfen(entry["sfen"])
             os.system('clear')
-            print(f"{board}")
+            print(render_hands(board))
+            print(render_board(board))
+            print()
             time.sleep(0.5)
-            return
+            # return
 
 
 if __name__ == "__main__":
