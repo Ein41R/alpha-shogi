@@ -5,3 +5,7 @@
 
 #whiteboard
 .whiteboard.txt
+
+# Python
+__pycache__/
+*.pyc
