@@ -9,6 +9,14 @@ Log levels are the following:
     >=5: None
 """
 
+from config.miscConfig import (
+    RESET,
+    LOG_DEBUG,
+    LOG_INFO,
+    LOG_WARNING,
+    LOG_ERROR,
+    LOG_CRITICAL,
+)
 
 
 
@@ -18,23 +26,23 @@ class Logger():
 
     def DEBUG(self, message):
         if self.log_level <= 0:
-            print(f"[\x1b[1;38;5;27mDEBUG\033[0m] {message}")
+            print(f"[{LOG_DEBUG}DEBUG{RESET}] {message}")
 
     def INFO(self, message):
         if self.log_level <= 1:
-            print(f"[\x1b[1;38;5;47mINFO\033[0m] {message}")
+            print(f"[{LOG_INFO}INFO{RESET}] {message}")
 
     def WARNING(self, message):
         if self.log_level <= 2:
-            print(f"[\x1b[1;38;5;226mWARNING\033[0m] {message}")
+            print(f"[{LOG_WARNING}WARNING{RESET}] {message}")
 
     def ERROR(self, message):
         if self.log_level <= 3:
-            print(f"[\x1b[1;38;5;215mERROR\033[0m] {message}")
+            print(f"[{LOG_ERROR}ERROR{RESET}] {message}")
 
     def CRITICAL(self, message):
         if self.log_level <= 4:
-            print(f"[\x1b[1;38;5;203mCRITICAL\033[0m] {message}")
+            print(f"[{LOG_CRITICAL}CRITICAL{RESET}] {message}")
 
 
 logger = Logger()
