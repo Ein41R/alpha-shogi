@@ -1,6 +1,10 @@
 """
 10/13/2026 by Ein41r
 Python script for parsing data in YaneuraOu PackedSfenValue format.
+
+Decoder returns SFEN string and move in USI format:
+sfen, move, score, ply, result
+
 """
 
 import numpy as np
