@@ -10,6 +10,8 @@ Log levels are the following:
 """
 
 
+
+
 class Logger():
     def __init__(self, log_level=-1):
         self.log_level = log_level
