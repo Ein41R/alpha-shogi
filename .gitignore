@@ -2,3 +2,6 @@
 
 #Ignore SFEN .bin files
 *.bin
+
+#whiteboard
+.whiteboard.txt
