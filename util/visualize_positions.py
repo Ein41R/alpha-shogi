@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from pathlib import Path
 
 import cshogi
@@ -7,10 +8,27 @@ import cshogi
 from util.sfenParser import Parser
 
 
-def render_board(board):
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+GOLD = "\033[38;5;220m"
+BOARD_LINE = "\033[38;5;94m"
+SENTE = "\033[38;5;203m"
+GOTE = "\033[38;5;117m"
+
+
+def paint(text, style, enabled):
+    if not enabled:
+        return text
+    return f"{style}{text}{RESET}"
+
+
+def render_board(board, color=None):
+    color = sys.stdout.isatty() if color is None else color
     symbols = cshogi.PIECE_JAPANESE_SYMBOLS
-    rows = ["    " + "  ".join(f"{file_number:^4}" for file_number in range(9, 0, -1))]
-    rows.append("  +" + "----+" * 9)
+    files = "  " + "┬".join(f"{file_number:^4}" for file_number in range(9, 0, -1))
+    rows = [paint(files, BOLD + GOLD, color)]
+    rows.append(paint("  ┌" + "────┬" * 8 + "────┐", BOARD_LINE, color))
 
     for rank in range(9):
         cells = []
@@ -20,24 +38,36 @@ def render_board(board):
                 cells.append("    ")
                 continue
             owner = "▲" if piece < cshogi.WPAWN else "△"
-            cells.append(f"{owner}{symbols[piece % 16]:^2}")
-        rows.append(f"{rank + 1} │" + "│".join(cells) + "│")
+            style = SENTE if piece < cshogi.WPAWN else GOTE
+            cells.append(paint(f" {owner}{symbols[piece % 16]}", style, color))
+        rows.append(
+            paint(f"{rank + 1} │", BOLD + GOLD, color)
+            + paint("│".join(cells), "", color)
+            + paint("│", BOARD_LINE, color)
+        )
 
-    rows.append("  +" + "----+" * 9)
+    rows.append(paint("  └" + "────┴" * 8 + "────┘", BOARD_LINE, color))
     return "\n".join(rows)
 
 
-def render_hands(board):
+def render_hands(board, color=None):
+    enabled = sys.stdout.isatty() if color is None else color
     hands = []
-    for color, label in ((cshogi.WHITE, "後手持駒"), (cshogi.BLACK, "先手持駒")):
+    for hand_color, label in ((cshogi.WHITE, "後手持駒"), (cshogi.BLACK, "先手持駒")):
         pieces = []
         for symbol, count in zip(
             cshogi.HAND_PIECE_JAPANESE_SYMBOLS,
-            board.pieces_in_hand[color],
+            board.pieces_in_hand[hand_color],
         ):
             if count:
                 pieces.append(f"{symbol}{count}")
-        hands.append(f"{label}: " + (" ".join(pieces) if pieces else "なし"))
+        hands.append(
+            paint(
+                f"{label}: " + (" ".join(pieces) if pieces else "なし"),
+                GOTE if hand_color == cshogi.WHITE else SENTE,
+                enabled,
+            )
+        )
     return "\n".join(hands)
 
 
@@ -75,6 +105,11 @@ def main():
         default=Path("visualizations/position.svg"),
         help="Output path for the SVG board.",
     )
+    argument_parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable ANSI colors in terminal output.",
+    )
     args = argument_parser.parse_args()
 
     if args.path is None:
@@ -92,8 +127,9 @@ def main():
     args.svg.parent.mkdir(parents=True, exist_ok=True)
     args.svg.write_text(board.to_svg(), encoding="utf-8")
 
-    print(render_hands(board))
-    print(render_board(board))
+    use_color = not args.no_color
+    print(render_hands(board, color=use_color))
+    print(render_board(board, color=use_color))
     print()
     print(f"SFEN:   {board.sfen()}")
     print(f"Move:   {move}")
