@@ -36,8 +36,10 @@ def main():
             print(render_hands(board))
             print(render_board(board))
             print()
+            print(entry["sfen"])
+            print(len(entry["sfen"]))
             time.sleep(0.5)
-            # return
+            return
 
 
 if __name__ == "__main__":
