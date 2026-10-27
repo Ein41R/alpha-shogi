@@ -37,10 +37,13 @@ class alphaShogi():
         )
 
         self.dec = nn.Linear(D, config.n_tgt)
+        # must construct move from decoder output and pack it in updated SFEN format
 
-        self.Wq = nn.Linear(D, D)
-        self.Wk = nn.Linear(D, D)
-        self.Wv = nn.Linear(D, D)
+        # self.Wq = nn.Linear(D, D)
+        # self.Wk = nn.Linear(D, D)
+        # self.Wv = nn.Linear(D, D)
 
-    #We need attention to the previous moves if we do Tabula Rasa    
+    # We need attention to the previous moves if we do Tabula Rasa 
+    # same moves in a row makes draw, so attention must be paid to them()
     def attn(self, x):
+        pass #skip attention for now, it just increases need for samples which we dont have
