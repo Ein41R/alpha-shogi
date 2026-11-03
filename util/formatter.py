@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
+import cshogi
 
 """
 Primary purpose is to convert
@@ -18,6 +19,7 @@ class Formatter():
     def __init__(self):
         pass
 
+    # So this is ass, idk why i wrote this tbh, leaving it for now tho
     # return move as int32
     def t_esfToInt32(self, esf_t):
         # input esf tensor of size [B, 88*81*2]
@@ -35,3 +37,24 @@ class Formatter():
                         move_vector[b, i*81+j] = (from_sq << 7) | to_sq | (1 << 14 if is_promotion else 0)
         
         return move_vector
+
+    def mask_tensor(self, tensor, board: cshogi.Board):
+        # tensor: [B, 88*81*2]
+        # removes each tensor from illegal move
+        legalMoveIterator = board.legal_moves()
+        legalMoves = set()
+        for move in legalMoveIterator:
+            legalMoves.add(move)
+
+        tensor = tensor.reshape(-1,88,81,2) #-> [B,88,81,2]
+
+        for b in range(tensor.shape[0]):
+            for i in range(tensor.shape[1]):
+                for j in range(tensor.shape[2]):
+                    for p in range(tensor.shape[3]):
+                        move = (i << 7) | j | (1 << 14 if p == 1 else 0)
+                        if move not in legalMoves:
+                            tensor[b,i,j,p] = -torch.inf #mask illegal moves
+
+        return tensor.reshape(-1,88*81*2) #-> [B,88*81*2]
+    
