@@ -55,9 +55,8 @@ class alphaShogi(nn.Module):
         # then mask and softmax 
         return x
 
-    def validate(self, x):
-        # validate the output of the model, check if it is a valid move
-        # if not, return a random valid move
+    def validate(self, x): 
+        # expects x of size B,81*88*2
 
         pass
 
