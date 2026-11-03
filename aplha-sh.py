@@ -1,5 +1,8 @@
+from networkx import config
 import torch
-from torch import nn
+from torch import inf, nn
+from util.formatter import Formatter
+import cshogi
 
 """
     PIPELINE
@@ -14,10 +17,10 @@ class alphaShogiConfig:
     dropout: float = 0.3
     n_src: int = 32
     n_tgt: int = 88*81*2 #softmax on this, deterministicly reverse to piece->position mapping
-
+    topk: int = 0 #topk moves to consider for MCTS, if 1 then argmax only
 
 class alphaShogi(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: alphaShogiConfig):
         super().__init__()
         self.config = config
         D = config.n_emb
@@ -28,6 +31,8 @@ class alphaShogi(nn.Module):
         self.drop = nn.Dropout(config.dropout)
         self.expand = nn.Linear(D, config.n_tgt, bias=False) # B,128 -> B,88*81*2
         self.activate = nn.ReLU()
+
+        self.formatter = Formatter()
 
         # self.Wq = nn.Linear(D, D)
         # self.Wk = nn.Linear(D, D)
@@ -56,9 +61,17 @@ class alphaShogi(nn.Module):
         return x
 
     def validate(self, x): 
-        # expects x of size B,81*88*2
+        y = self.formatter.t_esfToInt32(x) #converts B,88,81,2 to B,88*81*2 [int32] move vector
+        for b in range(y.shape[0]):
+            for move in range(y.shape[1]):
+                y[b,move] = -torch.inf if cshogi.is_legal(y[b,move]) else y[b,move] #mask illegal moves
+        return y
 
-        pass
+    #only argmax for not fully deterministic, but we can use topk for MCTS
+    def generate(self, y):
+        logits = nn.Softmax(dim=-1)(y) # B,88*81*2
+        move = torch.argmax(logits, dim=-1) # B,88*81*2
+        return move
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
