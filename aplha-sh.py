@@ -1,3 +1,5 @@
+from shutil import move
+
 from networkx import config
 import torch
 from torch import inf, nn
@@ -60,6 +62,7 @@ class alphaShogi(nn.Module):
         # then mask and softmax 
         return x
 
+    #WARNING: TODO: THIS ASSUMES THAT B = 1 NEED TO EXTEND THIS LATER!!!!
     def generate(self,x,board: cshogi.Board):
         x = self.forward(x) # B,88*81*2
         x = self.formatter.mask_tensor(x, board) # B,88*81*2
@@ -69,7 +72,9 @@ class alphaShogi(nn.Module):
         #     return topk_values, topk_indices
         # else:
         #     return torch.argmax(x, dim=-1) # B,88*81*2
-        return torch.argmax(x, dim=-1) # B,88*81*2
+        y = torch.argmax(x, dim=-1) # B,88*81*2
+        move = self.formatter.t_esfToInt32(y) # B,88*81*2 -> B, int32
+        return move
 
 
     def _init_weights(self, module):

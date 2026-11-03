@@ -38,6 +38,14 @@ class Formatter():
         
         return move_vector
 
+    def esfToInt32(self, esf):
+        # input is argmax output assuminb b = 1: 0,from,to,promotion
+        from_sq = esf[1]
+        to_sq = esf[2]
+        is_promotion = True if esf[3] == 1 else False
+        return (from_sq << 7) | to_sq | (1 << 14 if is_promotion else 0)
+
+
     def mask_tensor(self, tensor, board: cshogi.Board):
         # tensor: [B, 88*81*2]
         # removes each tensor from illegal move
@@ -56,5 +64,5 @@ class Formatter():
                         if move not in legalMoves:
                             tensor[b,i,j,p] = -torch.inf #mask illegal moves
 
-        return tensor.reshape(-1,88*81*2) #-> [B,88*81*2]
+        return tensor#tensor.reshape(-1,88*81*2) #-> [B,88*81*2]
     
