@@ -40,7 +40,7 @@ def main():
             print(len(entry["sfen"]))
             time.sleep(0.5)
             return
-
+    
 
 if __name__ == "__main__":
     main()

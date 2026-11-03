@@ -27,6 +27,7 @@ class alphaShogi(nn.Module):
         self.ln = nn.LayerNorm(D, elementwise_affine=False, bias=False)
         self.drop = nn.Dropout(config.dropout)
         self.expand = nn.Linear(D, config.n_tgt, bias=False) # B,128 -> B,88*81*2
+        self.activate = nn.ReLU()
 
         # self.Wq = nn.Linear(D, D)
         # self.Wk = nn.Linear(D, D)
@@ -40,13 +41,25 @@ class alphaShogi(nn.Module):
         pass #skip attention for now, it just increases need for samples which we dont have
 
     def forward(self, x): #x is array in sfen format, convert to np array/tensor
+        x = self.ln(x)
         x = self.embed(x) # B,32 -> B,128
-        x = self.ln(x)
-        x = self.ponder(x) # B,128 -> B,128
+        
+        x = self.ponder(x) # B,128 -> B,12
         x = self.drop(x)
+        x = self.activate(x)
         x = self.ln(x)
-        x = self.expand.T @ x.T # B,128 -> B,88*81*2
+
+        x = self.expand(x) # B,128 -> B,88*81*2
+        x = self.activate(x)
+        x = self.ln(x)
+        # then mask and softmax 
         return x
+
+    def validate(self, x):
+        # validate the output of the model, check if it is a valid move
+        # if not, return a random valid move
+
+        pass
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
