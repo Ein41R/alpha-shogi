@@ -60,18 +60,17 @@ class alphaShogi(nn.Module):
         # then mask and softmax 
         return x
 
-    # def validate(self, x): 
-    #     y = self.formatter.t_esfToInt32(x) #converts B,88,81,2 to B,88*81*2 [int32] move vector
-    #     for b in range(y.shape[0]):
-    #         for move in range(y.shape[1]):
-    #             y[b,move] = -torch.inf if cshogi.is_legal(y[b,move]) else y[b,move] #mask illegal moves
-    #     return y
+    def generate(self,x,board: cshogi.Board):
+        x = self.forward(x) # B,88*81*2
+        x = self.formatter.mask_tensor(x, board) # B,88*81*2
+        x = torch.softmax(x, dim=-1) # B,88*81*2
+        # if self.config.topk > 0:
+        #     topk_values, topk_indices = torch.topk(x, self.config.topk, dim=-1)
+        #     return topk_values, topk_indices
+        # else:
+        #     return torch.argmax(x, dim=-1) # B,88*81*2
+        return torch.argmax(x, dim=-1) # B,88*81*2
 
-    # #only argmax for not fully deterministic, but we can use topk for MCTS
-    # def generate(self, y):
-    #     logits = nn.Softmax(dim=-1)(y) # B,88*81*2
-    #     move = torch.argmax(logits, dim=-1) # B,88*81*2
-    #     return move
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
