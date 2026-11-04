@@ -1,10 +1,9 @@
 from shutil import move
-
-from networkx import config
 import torch
 from torch import inf, nn
 from util.formatter import Formatter
 import cshogi
+from config.modeConfig import alphaShogiConfig
 
 """
     PIPELINE
@@ -13,13 +12,6 @@ import cshogi
 
     TODO: MCTS with upper confidence bound (UCB)
 """
-
-class alphaShogiConfig:
-    n_emb: int = 128#256
-    dropout: float = 0.3
-    n_src: int = 32
-    n_tgt: int = 88*81*2 #softmax on this, deterministicly reverse to piece->position mapping
-    topk: int = 0 #topk moves to consider for MCTS, if 1 then argmax only
 
 class alphaShogi(nn.Module):
     def __init__(self, config: alphaShogiConfig):
