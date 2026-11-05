@@ -1,0 +1,2 @@
+LOG_FREQ = 50
+EPOCHS = 100

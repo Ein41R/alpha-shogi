@@ -3,7 +3,7 @@ import torch
 from torch import inf, nn
 from util.formatter import Formatter
 import cshogi
-from config.modeConfig import alphaShogiConfig
+from config.modelConfig import alphaShogiConfig
 
 """
     PIPELINE
