@@ -19,7 +19,7 @@ dtype = (
 
 #context manager for automatic mixed precision
 ctx = (
-    torch.amp.autocast(device_type=device.type, dtype=ptdtype)
+    torch.amp.autocast(device_type=device.type)#, dtype=ptdtype)
     if "cuda" in device.type
     else nullcontext()
 ) 

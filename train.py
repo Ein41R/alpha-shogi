@@ -19,6 +19,7 @@ import torch.nn.functional as F
 import cshogi
 
 from util.sfenParser import Parser
+import util.visualize_positions as viz
 
 from model.alphaShogi import alphaShogi, alphaShogiConfig
 import os
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     loss_acc = 0
 
     for i in range(EPOCHS):
-        for bin in os.abortable(os.listdir(INPUT_FILEPATH)):
+        for bin in os.listdir(INPUT_FILEPATH):
             if bin.endswith(".bin"):
                 print(f"Loading {bin}...")
                 parsefile = parser.parseFile(os.path.join(INPUT_FILEPATH, bin))
@@ -57,6 +58,9 @@ if __name__ == "__main__":
                     sfen = parser.decodeSfen(entry["sfen"])
                     sfens.append(sfen)
                 for i in range(len(sfens)-1):
+                    if i % LOG_FREQ == 0:
+                        print(viz.render_hands(board))
+                        print(viz.render_board(board))
                     board.set_psfen(sfen[i+1])
                     #sfen is array of 32 ints
                     sfen_tensor = torch.tensor(sfen, dtype=torch.int64, device=device).unsqueeze(0) # B,32
