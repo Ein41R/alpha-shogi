@@ -5,17 +5,17 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 #device type
 dtype = (
-    "bfloat16"
+    torch.bfloat16
     if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
-    else "float16"
+    else torch.float16
 )
 
 #parameter type
-ptdtype = {
-    "float32": torch.float32,
-    "bfloat16": torch.bfloat16,
-    "float16": torch.float16,
-}[dtype]
+# ptdtype = {
+#     "float32": torch.float32,
+#     "bfloat16": torch.bfloat16,
+#     "float16": torch.float16,
+# }[dtype]
 
 #context manager for automatic mixed precision
 ctx = (

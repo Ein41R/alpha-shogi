@@ -4,7 +4,7 @@ from config.trainConfig import (
 )
 
 from config.torchConfig import (
-    pdtype,
+    #ptdtype,
     dtype,
     device,
     ctx
@@ -31,6 +31,8 @@ print(f"Using device: {device} with dtype {dtype}")
 
 INPUT_FILEPATH = "data/"
 
+def bitwise_loss(src_int, tgt_int) -> int: #which coincidentally is the hamming distance
+    return (src_int ^ tgt_int).bit_count()
 
 if __name__ == "__main__":
     model = alphaShogi(alphaShogiConfig()).to(device=device, dtype=dtype)
@@ -40,32 +42,31 @@ if __name__ == "__main__":
     parser = Parser()
     board = cshogi.Board()
 
+    loss_acc = 0
+
     for i in range(EPOCHS):
         for bin in os.abortable(os.listdir(INPUT_FILEPATH)):
             if bin.endswith(".bin"):
                 print(f"Loading {bin}...")
                 parsefile = parser.parseFile(os.path.join(INPUT_FILEPATH, bin))
                 sfens = []
+                loss_acc = 0
                 for entry in parsefile:
                     sfen = parser.decodeSfen(entry["sfen"])
                     sfens.append(sfen)
-                for i,sfen in enumerate(sfens):
-                    board.set_psfen(sfen)
+                for i in range(len(sfens)-1):
+                    board.set_psfen(sfen[i+1])
                     #sfen is array of 32 ints
                     sfen_tensor = torch.tensor(sfen, dtype=torch.int64, device=device).unsqueeze(0) # B,32
-                    
+                    x = model.forward(sfen_tensor) # B,88*81*2
+                    predicted_move = model.generate(sfen_tensor, board) # B,88*81*2 -> B, int32
+                    target_move = board.peek()
 
+                    #calc loss
+                    loss = bitwise_loss(predicted_move[0,-1].item(), target_move)
+                    scaler.scale(loss).backward()
+                    scaler.step(optim)
+                    scaler.update()
 
-
-                data = torch.load(os.path.join(INPUT_FILEPATH, bin), map_location=device)
-                x = data["x"].to(device=device, dtype=dtype)
-                y = data["y"].to(device=device, dtype=dtype)
-
-                optim.zero_grad(set_to_none=True)
-                with torch.amp.autocast(device_type=device.type, dtype=dtype):
-                    logits = model(x)
-                    loss = F.cross_entropy(logits, y)
-
-                scaler.scale(loss).backward()
-                scaler.step(optim)
-                scaler.update()
+                    loss_acc += loss.item()
+                print(f"Average loss for {bin}: {loss_acc/len(sfens)}")
