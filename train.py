@@ -1,7 +1,8 @@
 from config.trainConfig import (
     LOG_FREQ,
     EPOCHS,
-    LEARNING_RATE
+    LEARNING_RATE,
+    WEIGHT_DECAY
 )
 
 from config.torchConfig import (
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     model = alphaShogi(alphaShogiConfig()).to(device=device, dtype=dtype)
     model = torch.compile(model)
 
-    optim = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.95), weight_decay=alphaShogiConfig().weight_decay)
+    optim = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.95), weight_decay=WEIGHT_DECAY)
     parser = Parser()
     board = cshogi.Board()
 
