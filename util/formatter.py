@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import numpy as np
 import cshogi
+from util.logger import logger
 
 """
 Primary purpose is to convert
@@ -49,9 +50,13 @@ class Formatter():
     def mask_tensor(self, tensor, board: cshogi.Board):
         # tensor: [B, 88*81*2]
         # removes each tensor from illegal move
+        logger.DEBUG(f"masking tensor with shape: {tensor.shape} and dtype: {tensor.dtype}")
         legalMoveIterator = board.legal_moves()
+        logger.DEBUG(f"legal moves: {list(legalMoveIterator)}")
+        
         legalMoves = set()
         for move in legalMoveIterator:
+            logger.DEBUG(f"legal move: {move}")
             legalMoves.add(move)
 
         tensor = tensor.reshape(-1,88,81,2) #-> [B,88,81,2]
