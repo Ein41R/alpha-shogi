@@ -4,6 +4,7 @@ from torch import inf, nn
 from util.formatter import Formatter
 import cshogi
 from config.modelConfig import alphaShogiConfig
+from util.logger import logger
 
 """
     PIPELINE
@@ -14,11 +15,10 @@ from config.modelConfig import alphaShogiConfig
 """
 
 class alphaShogi(nn.Module):
-    def __init__(self, config: alphaShogiConfig, logger=None):
+    def __init__(self, config: alphaShogiConfig):
         super().__init__()
         self.config = config
         D = config.n_emb
-        self.logger = logger
 
         self.initial_norm = nn.LayerNorm(config.n_src, elementwise_affine=False, bias=False)
 
@@ -45,14 +45,14 @@ class alphaShogi(nn.Module):
         pass #skip attention for now, it just increases need for samples which we dont have
 
     def forward(self, x): #x is array in sfen format, convert to np array/tensor
-        self.logger.DEBUG("forward pass")
+        logger.DEBUG("forward pass")
         x  = x.half() # B,32 NOTE: WARNING: TODO: .float converts to float32  we need float16 here. This kinda sucks since it is incoherent to the train config
-        self.logger.DEBUG(f"forward pass with input shape: {x.shape} and dtype: {x.dtype}")
+        logger.DEBUG(f"forward pass with input shape: {x.shape} and dtype: {x.dtype}")
         x = self.initial_norm(x)
-        self.logger.DEBUG(f"forward pass after initial norm with shape: {x.shape} and dtype: {x.dtype}")
+        logger.DEBUG(f"forward pass after initial norm with shape: {x.shape} and dtype: {x.dtype}")
         x = self.embed(x) # B,32 -> B,128
 
-        self.logger.DEBUG(f"forward pass after embedding with shape: {x.shape} and dtype: {x.dtype}")
+        logger.DEBUG(f"forward pass after embedding with shape: {x.shape} and dtype: {x.dtype}")
         x = self.ponder(x) # B,128 -> B,12
         x = self.drop(x)
         x = self.activate(x)
