@@ -94,7 +94,7 @@ if __name__ == "__main__":
                             f"{filename} record {index}; check the move encoding."
                         )
                     distribution = torch.distributions.Categorical(logits=flat_logits)
-                    sampled_index = distribution.sample()
+                    sampled_index = distribution.sample() #sample picks one move by prob
                     log_probability = distribution.log_prob(sampled_index).squeeze(0)
 
                     promotion = int(sampled_index.item() % 2)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                     policy_loss.backward()
                     optim.step()
 
-                    baseline = (
+                    baseline = ( #baseline EMA approaches a optimal baseline && baseline somewhat acts like a bias
                         baseline_momentum * baseline
                         + (1 - baseline_momentum) * hamming_distance
                     )
