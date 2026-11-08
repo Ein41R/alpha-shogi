@@ -31,6 +31,8 @@ def main():
             # score = entry["score"]
             # ply = entry["gamePly"]
             # result = entry["gameResult"]
+            # print(entry["sfen"])
+            # exit()
             board.set_psfen(entry["sfen"])
             os.system('clear')
             print(render_hands(board))

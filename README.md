@@ -12,3 +12,8 @@ The reason we still use self-supervised learning is;
 1. learn reinforcement learning
 2. Get better at shogi
 3. (optional) leverage different optimizers, learning rates and other parameters tuned in the process of rl
+
+# WARNING
+in line 49 of alphaShogi.py we do have a x.half() operation.
+This converts the tensor dtype tp float16. 
+That is a inconsistency to the torch config python file, which has to be resolved manually unless fixed by maintainer.

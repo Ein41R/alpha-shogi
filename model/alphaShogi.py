@@ -14,17 +14,22 @@ from config.modelConfig import alphaShogiConfig
 """
 
 class alphaShogi(nn.Module):
-    def __init__(self, config: alphaShogiConfig):
+    def __init__(self, config: alphaShogiConfig, logger=None):
         super().__init__()
         self.config = config
         D = config.n_emb
+        self.logger = logger
 
-        self.embed = nn.Embedding(config.n_src, D) # B,32 -> B,128
+        self.initial_norm = nn.LayerNorm(config.n_src, elementwise_affine=False, bias=False)
+
+        # self.embed = nn.Embedding(config.n_src, D) # B,32 -> B,128
+        self.embed = nn.Linear(config.n_src, D, bias=False) # B,32 -> B,128
         self.ponder = nn.Linear(D, D, bias=False) # B,128 -> B,128
         self.ln = nn.LayerNorm(D, elementwise_affine=False, bias=False)
         self.drop = nn.Dropout(config.dropout)
         self.expand = nn.Linear(D, config.n_tgt, bias=False) # B,128 -> B,88*81*2
         self.activate = nn.ReLU()
+        self.dtype = torch.float16
 
         self.formatter = Formatter()
 
@@ -40,9 +45,14 @@ class alphaShogi(nn.Module):
         pass #skip attention for now, it just increases need for samples which we dont have
 
     def forward(self, x): #x is array in sfen format, convert to np array/tensor
-        x = self.ln(x)
+        self.logger.DEBUG("forward pass")
+        x  = x.half() # B,32 NOTE: WARNING: TODO: .float converts to float32  we need float16 here. This kinda sucks since it is incoherent to the train config
+        self.logger.DEBUG(f"forward pass with input shape: {x.shape} and dtype: {x.dtype}")
+        x = self.initial_norm(x)
+        self.logger.DEBUG(f"forward pass after initial norm with shape: {x.shape} and dtype: {x.dtype}")
         x = self.embed(x) # B,32 -> B,128
-        
+
+        self.logger.DEBUG(f"forward pass after embedding with shape: {x.shape} and dtype: {x.dtype}")
         x = self.ponder(x) # B,128 -> B,12
         x = self.drop(x)
         x = self.activate(x)
@@ -50,7 +60,6 @@ class alphaShogi(nn.Module):
 
         x = self.expand(x) # B,128 -> B,88*81*2
         x = self.activate(x)
-        x = self.ln(x)
         # then mask and softmax 
         return x
 
