@@ -75,7 +75,7 @@ if __name__ == "__main__":
                     target_move = board.peek()
 
                     #calc loss
-                    loss = bitwise_loss(predicted_move[0,-1].item(), target_move)
+                    loss = bitwise_loss(predicted_move, target_move) #NOTE: ASSUMES B = 1
                     scaler.scale(loss).backward()
                     scaler.step(optim)
                     scaler.update()
