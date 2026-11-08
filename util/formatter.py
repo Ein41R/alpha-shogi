@@ -50,21 +50,20 @@ class Formatter():
     def mask_tensor(self, tensor, board: cshogi.Board):
         # tensor: [B, 88*81*2]
         # removes each tensor from illegal move
-        logger.DEBUG(f"masking tensor with shape: {tensor.shape} and dtype: {tensor.dtype}")
-        legalMoveIterator = board.legal_moves()
-        logger.DEBUG(f"legal moves: {list(legalMoveIterator)}")
+        legalMoveIterator = board.legal_moves
         
         legalMoves = set()
         for move in legalMoveIterator:
-            logger.DEBUG(f"legal move: {move}")
             legalMoves.add(move)
 
         tensor = tensor.reshape(-1,88,81,2) #-> [B,88,81,2]
+        logger.DEBUG(f"[\x1b[38;5;207mformatter.mask_tensor\x1b[0m]: reshaped tensor to {tensor.shape} for masking")
 
         for b in range(tensor.shape[0]):
             for i in range(tensor.shape[1]):
                 for j in range(tensor.shape[2]):
                     for p in range(tensor.shape[3]):
+                        logger.DEBUG(f"[\x1b[38;5;207mformatter.mask_tensor\x1b[0m]: checking move: from {i} to {j} promotion {p}")
                         move = (i << 7) | j | (1 << 14 if p == 1 else 0)
                         if move not in legalMoves:
                             tensor[b,i,j,p] = -torch.inf #mask illegal moves
