@@ -121,9 +121,3 @@ if __name__ == "__main__":
                         logger.INFO(
                             f"Hamming distance for entry {index}: {hamming_distance}"
                         )
-
-                if len(parsefile):
-                    logger.INFO(
-                        f"Average Hamming distance for {filename}: "
-                        f"{loss_acc / len(parsefile)}"
-                    )
