@@ -9,6 +9,8 @@ Log levels are the following:
     >=5: None
 """
 
+from unittest import case
+
 from config.miscConfig import (
     RESET,
     LOG_DEBUG,
@@ -49,7 +51,24 @@ logger = Logger()
 
 
 def configure_logger(log_level):
-    logger.log_level = log_level
+    if type(log_level) is int:
+        logger.log_level = log_level
+    elif type(log_level) is str:
+        log_level = log_level.upper()
+        if log_level == "DEBUG":
+            logger.log_level = 0
+        elif log_level == "INFO":
+            logger.log_level = 1
+        elif log_level == "WARNING":
+            logger.log_level = 2
+        elif log_level == "ERROR":
+            logger.log_level = 3
+        elif log_level == "CRITICAL":
+            logger.log_level = 4
+        else:
+            raise ValueError(f"Invalid log level: {log_level}")
+    else:
+        logger.log_level = -1
 
 if __name__ == "__main__":
     #testing dummy data
