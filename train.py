@@ -27,7 +27,6 @@ from model.alphaShogi import alphaShogi, alphaShogiConfig
 import os
 
 
-scaler = torch.amp.GradScaler(device=device.type, enabled=(dtype == "float16"))
 torch.manual_seed(42)
 torch.backends.cuda.matmul.allow_tf32 = True  # allow tf32 on matmul
 torch.backends.cudnn.allow_tf32 = True  # allow tf32 on cudnn
@@ -36,50 +35,95 @@ logger.INFO(f"Using device: {device} with dtype {dtype}")
 
 INPUT_FILEPATH = "data/"
 
-def bitwise_loss(src_int, tgt_int) -> int: #which coincidentally is the hamming distance
-    return (src_int ^ tgt_int).bit_count()
+def bitwise_loss(src_int, tgt_int) -> int:
+    """Hamming distance over action bits, excluding capture metadata."""
+    action_mask = 0x7FFF
+    return ((int(src_int) & action_mask) ^ (int(tgt_int) & action_mask)).bit_count()
 
 if __name__ == "__main__":
     configure_logger(0)
 
-    model = alphaShogi(alphaShogiConfig()).to(device=device, dtype=dtype)
+    # Keep master parameters in float32. AdamW updates to float16 parameters can
+    # overflow/underflow and turn the policy logits into NaN or infinity.
+    model = alphaShogi(alphaShogiConfig()).to(device=device, dtype=torch.float32)
     model = torch.compile(model)
 
     optim = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.95), weight_decay=WEIGHT_DECAY)
     parser = Parser()
     board = cshogi.Board()
 
-    loss_acc = 0
+    baseline = 0.0
+    baseline_momentum = 0.95
 
-    for i in range(EPOCHS):
-        for bin in os.listdir(INPUT_FILEPATH):
-            if bin.endswith(".bin"):
-                logger.INFO(f"Loading {bin}...")
-                parsefile = parser.parseFile(os.path.join(INPUT_FILEPATH, bin))
-                sfens = []
+    for epoch in range(EPOCHS):
+        for filename in os.listdir(INPUT_FILEPATH):
+            if filename.endswith(".bin"):
+                logger.INFO(f"Loading {filename}...")
+                parsefile = parser.parseFile(os.path.join(INPUT_FILEPATH, filename))
                 loss_acc = 0
-                for entry in parsefile:
-                    sfen = entry["sfen"]#parser.decodeSfen(entry["sfen"])
-                    sfens.append(sfen)
-                for i in range(len(sfens)-1):
-                    if i % LOG_FREQ == 0:
+
+                for index, entry in enumerate(parsefile):
+                    packed_sfen = entry["sfen"]
+                    board.set_psfen(packed_sfen)
+                    target_move = int(board.move_from_psv(int(entry["move"])))
+
+                    if index % LOG_FREQ == 0:
                         logger.INFO("Current position:")
                         logger.INFO(viz.render_hands(board))
                         logger.INFO(viz.render_board(board))
-                    print(sfens[i])
-                    board.set_psfen(sfens[i+1])
-                    #sfen is array of 32 ints
-                    sfen_tensor = torch.tensor(sfen, dtype=dtype, device=device).unsqueeze(0) # B,32
-                    x = model.forward(sfen_tensor) # B,88*81*2
-                    predicted_move = model.generate(sfen_tensor, board) # B,88*81*2 -> B, int32
-                    target_move = board.peek()
 
-                    #calc loss
-                    loss = bitwise_loss(predicted_move, target_move) #NOTE: ASSUMES B = 1
-                    scaler.scale(loss).backward()
-                    scaler.step(optim)
-                    scaler.update()
-                    logger.INFO(f"Loss for entry {i}: {loss.item()}")
+                    sfen_tensor = torch.as_tensor(
+                        packed_sfen, dtype=torch.float32, device=device
+                    ).unsqueeze(0)
 
-                    loss_acc += loss.item()
-                logger.INFO(f"Average loss for {bin}: {loss_acc/len(sfens)}")
+                    # Sample a legal move from the model's action distribution.
+                    # The sampled move's exact Hamming distance is the reward;
+                    # REINFORCE supplies a gradient through its log probability.
+                    logits = model(sfen_tensor).reshape(1, 88, 81, 2)
+                    if not torch.isfinite(logits).all():
+                        raise RuntimeError(
+                            f"Model produced non-finite logits at {filename} record {index}."
+                        )
+                    # mask_tensor writes illegal-action sentinels in place; clone
+                    # first so the model's ReLU output remains intact for autograd.
+                    masked_logits = model.formatter.mask_tensor(logits.clone(), board)
+                    flat_logits = masked_logits.flatten(start_dim=1).float()
+                    if not torch.isfinite(flat_logits).any(dim=1).all():
+                        raise RuntimeError(
+                            f"No legal actions remained after masking at "
+                            f"{filename} record {index}; check the move encoding."
+                        )
+                    distribution = torch.distributions.Categorical(logits=flat_logits)
+                    sampled_index = distribution.sample()
+                    log_probability = distribution.log_prob(sampled_index).squeeze(0)
+
+                    promotion = int(sampled_index.item() % 2)
+                    to_square = int((sampled_index.item() // 2) % 81)
+                    from_square = int(sampled_index.item() // (2 * 81))
+                    predicted_move = model.formatter.cordsToInt32(
+                        from_square, to_square, promotion
+                    )
+                    hamming_distance = bitwise_loss(predicted_move, target_move)
+
+                    advantage = hamming_distance - baseline
+                    policy_loss = log_probability * advantage
+
+                    optim.zero_grad(set_to_none=True)
+                    policy_loss.backward()
+                    optim.step()
+
+                    baseline = (
+                        baseline_momentum * baseline
+                        + (1 - baseline_momentum) * hamming_distance
+                    )
+                    loss_acc += hamming_distance
+                    if index % LOG_FREQ == 0:
+                        logger.INFO(
+                            f"Hamming distance for entry {index}: {hamming_distance}"
+                        )
+
+                if len(parsefile):
+                    logger.INFO(
+                        f"Average Hamming distance for {filename}: "
+                        f"{loss_acc / len(parsefile)}"
+                    )

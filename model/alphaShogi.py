@@ -45,8 +45,7 @@ class alphaShogi(nn.Module):
         pass #skip attention for now, it just increases need for samples which we dont have
 
     def forward(self, x): #x is array in sfen format, convert to np array/tensor
-        logger.WARN("[\x1b[38;5;251malphaShogi.forward\x1b[0m]: recieved tensor: shape {}  dtype: {}, CONVERTING TO float16...".format(x.shape, x.dtype))
-        x  = x.half() # B,32 NOTE: WARNING: TODO: .float converts to float32  we need float16 here. This kinda sucks since it is incoherent to the train config
+        x = x.to(dtype=self.embed.weight.dtype)
         x = self.initial_norm(x)
         x = self.embed(x) # B,32 -> B,128
 

@@ -52,22 +52,28 @@ class Formatter():
 
     def mask_tensor(self, tensor, board: cshogi.Board):
         # tensor: [B, 88*81*2]
-        # removes each tensor from illegal move
-        legalMoveIterator = board.legal_moves
-        
-        legalMoves = set()
-        for move in legalMoveIterator:
-            legalMoves.add(move)
+        tensor = tensor.reshape(-1, 88, 81, 2)
 
-        tensor = tensor.reshape(-1,88,81,2) #-> [B,88,81,2]
-        
-        for b in range(tensor.shape[0]):
-            for i in range(tensor.shape[1]):
-                for j in range(tensor.shape[2]):
-                    for p in range(tensor.shape[3]):
-                        move = (i << 7) | j | (1 << 14 if p == 1 else 0)
-                        if move not in legalMoves:
-                            tensor[b,i,j,p] = -torch.inf #mask illegal moves
+        # cshogi stores captured-piece metadata above bit 14. The model action
+        # space contains only source, destination, and promotion, so discard
+        # that metadata when matching legal moves to action indices.
+        legal_actions = set()
+        for move in board.legal_moves:
+            move = int(move) & 0x7FFF
+            to_sq = move & 0x7F
+            from_sq = (move >> 7) & 0x7F
+            promote = (move >> 14) & 1
+            if from_sq < 88 and to_sq < 81:
+                legal_actions.add((from_sq, to_sq, promote))
 
-        return tensor#tensor.reshape(-1,88*81*2) #-> [B,88*81*2]
+        if not legal_actions:
+            raise ValueError("Cannot mask move scores: board has no legal moves")
+
+        legal_mask = torch.zeros(
+            (88, 81, 2), dtype=torch.bool, device=tensor.device
+        )
+        for from_sq, to_sq, promote in legal_actions:
+            legal_mask[from_sq, to_sq, promote] = True
+
+        return tensor.masked_fill(~legal_mask.unsqueeze(0), -torch.inf)
     
