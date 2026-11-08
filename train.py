@@ -42,7 +42,7 @@ def bitwise_loss(src_int, tgt_int) -> int: #which coincidentally is the hamming 
 if __name__ == "__main__":
     configure_logger(0)
 
-    model = alphaShogi(alphaShogiConfig(), logger=logger).to(device=device, dtype=dtype)
+    model = alphaShogi(alphaShogiConfig()).to(device=device, dtype=dtype)
     model = torch.compile(model)
 
     optim = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.95), weight_decay=WEIGHT_DECAY)
