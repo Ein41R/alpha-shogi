@@ -3,7 +3,7 @@ Logger class responsible for logging depending on Log Levels
 Log levels are the following:
     0: DEBUG
     1: INFO
-    2: WARNING
+    2: WARN
     3: ERROR
     4: CRITICAL
     >=5: None
@@ -15,7 +15,7 @@ from config.miscConfig import (
     RESET,
     LOG_DEBUG,
     LOG_INFO,
-    LOG_WARNING,
+    LOG_WARN,
     LOG_ERROR,
     LOG_CRITICAL,
 )
@@ -34,9 +34,9 @@ class Logger():
         if self.log_level <= 1:
             print(f"[{LOG_INFO}INFO{RESET}] {message}")
 
-    def WARNING(self, message):
+    def WARN(self, message):
         if self.log_level <= 2:
-            print(f"[{LOG_WARNING}WARNING{RESET}] {message}")
+            print(f"[{LOG_WARN}WARN{RESET}] {message}")
 
     def ERROR(self, message):
         if self.log_level <= 3:
@@ -59,7 +59,7 @@ def configure_logger(log_level):
             logger.log_level = 0
         elif log_level == "INFO":
             logger.log_level = 1
-        elif log_level == "WARNING":
+        elif log_level == "WARN":
             logger.log_level = 2
         elif log_level == "ERROR":
             logger.log_level = 3
@@ -75,6 +75,6 @@ if __name__ == "__main__":
     configure_logger(0)
     logger.DEBUG("This is a debug message.")
     logger.INFO("This is an info message.")
-    logger.WARNING("This is a warning message.")
+    logger.WARN("This is a WARN message.")
     logger.ERROR("This is an error message.")
     logger.CRITICAL("This is a critical message.")

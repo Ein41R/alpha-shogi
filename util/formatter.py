@@ -39,6 +39,9 @@ class Formatter():
         
         return move_vector
 
+    def cordsToInt32(self, from_sq, to_sq, is_promotion):
+        return (from_sq << 7) | to_sq | (1 << 14 if is_promotion else 0)
+
     def esfToInt32(self, esf):
         # input is argmax output assuminb b = 1: 0,from,to,promotion
         from_sq = esf[1]
@@ -57,13 +60,11 @@ class Formatter():
             legalMoves.add(move)
 
         tensor = tensor.reshape(-1,88,81,2) #-> [B,88,81,2]
-        logger.DEBUG(f"[\x1b[38;5;207mformatter.mask_tensor\x1b[0m]: reshaped tensor to {tensor.shape} for masking")
-
+        
         for b in range(tensor.shape[0]):
             for i in range(tensor.shape[1]):
                 for j in range(tensor.shape[2]):
                     for p in range(tensor.shape[3]):
-                        logger.DEBUG(f"[\x1b[38;5;207mformatter.mask_tensor\x1b[0m]: checking move: from {i} to {j} promotion {p}")
                         move = (i << 7) | j | (1 << 14 if p == 1 else 0)
                         if move not in legalMoves:
                             tensor[b,i,j,p] = -torch.inf #mask illegal moves

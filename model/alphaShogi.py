@@ -45,12 +45,11 @@ class alphaShogi(nn.Module):
         pass #skip attention for now, it just increases need for samples which we dont have
 
     def forward(self, x): #x is array in sfen format, convert to np array/tensor
-        logger.DEBUG("forward pass: recieved input tensor with shape: {} and dtype: {}".format(x.shape, x.dtype))
+        logger.WARN("[\x1b[38;5;251malphaShogi.forward\x1b[0m]: recieved tensor: shape {}  dtype: {}, CONVERTING TO float16...".format(x.shape, x.dtype))
         x  = x.half() # B,32 NOTE: WARNING: TODO: .float converts to float32  we need float16 here. This kinda sucks since it is incoherent to the train config
-        logger.DEBUG("forward pass: converted input tensor to half precision with shape: {} and dtype: {}".format(x.shape, x.dtype))
         x = self.initial_norm(x)
         x = self.embed(x) # B,32 -> B,128
-        
+
         x = self.ponder(x) # B,128 -> B,12
         x = self.drop(x)
         x = self.activate(x)
@@ -64,15 +63,22 @@ class alphaShogi(nn.Module):
     #WARNING: TODO: THIS ASSUMES THAT B = 1 NEED TO EXTEND THIS LATER!!!!
     def generate(self,x,board: cshogi.Board):
         x = self.forward(x) # B,88*81*2
-        x = self.formatter.mask_tensor(x, board) # B,88*81*2
-        x = torch.softmax(x, dim=-1) # B,88*81*2
-        # if self.config.topk > 0:
-        #     topk_values, topk_indices = torch.topk(x, self.config.topk, dim=-1)
-        #     return topk_values, topk_indices
-        # else:
-        #     return torch.argmax(x, dim=-1) # B,88*81*2
-        y = torch.argmax(x, dim=-1) # B,88*81*2
-        move = self.formatter.t_esfToInt32(y) # B,88*81*2 -> B, int32
+        x = self.formatter.mask_tensor(x, board) # B,88,81,2        
+        logger.DEBUG(f"[\x1b[38;5;251malphaShogi.generate\x1b[0m]: shape {x.shape}")
+        x = torch.softmax(x, dim=-1) # B,88,81,2
+        logger.DEBUG(f"[\x1b[38;5;251malphaShogi.generate\x1b[0m]: shape {x.shape}")
+
+        #JESUS Christ PLEASE WORK (removing B at this point since -> assumption B = 1 in place)
+        shape = x.shape[1:]                      # (88, 81, 2) - grab BEFORE flattening
+        x = x.flatten(start_dim=1)               # B, 88*81*2
+        y = torch.argmax(x, dim=-1)              # B
+
+        from_piece, to_square, promote = torch.unravel_index(y, shape)
+
+        logger.DEBUG(f"[\x1b[38;5;251malphaShogi.generate\x1b[0m]: from_piece: {from_piece}, to_square: {to_square}, promote: {promote}")
+
+        move = self.formatter.cordsToInt32(from_piece.item(), to_square.item(), promote.item())
+        logger.INFO(f"[\x1b[38;5;251malphaShogi.generate\x1b[0m]: Success!")
         return move
 
 
@@ -83,4 +89,3 @@ class alphaShogi(nn.Module):
                 nn.init.zeros_(module.bias)
         elif isinstance(module, nn.Embedding):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
-
